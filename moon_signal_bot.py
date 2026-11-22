@@ -98,7 +98,6 @@ def detect_sell(c, A, n):
         if j < 0 or c[j]["c"] >= h["p"] or j < len(c) - 90: continue
         sh = max(c[k]["h"] for k in range(j, min(j + 2, len(c) - 1) + 1))
         wick = sh - h["p"]
-        if wick < 0.1 * A: continue
         ref = None
         for l in L:
             if h["i"] < l["i"] < j: ref = l
@@ -108,11 +107,13 @@ def detect_sell(c, A, n):
             if c[k]["c"] > sh: break
             if c[k]["c"] < ref["p"]: m = k; break
         if m < 0: continue
-        disp = max(c[k]["o"] - c[k]["c"] for k in range(j + 1, m + 1)) / A
+        Am = atr(c[:m + 1])                                      # volatility when the setup formed
+        if wick < 0.1 * Am: continue
+        disp = max(c[k]["o"] - c[k]["c"] for k in range(j + 1, m + 1)) / Am
         if disp < 0.6: continue                                  # weak shift: skip
         leg_lo = min(c[k]["l"] for k in range(j, m + 1))
         z = None
-        for f in fvgs(c[:min(len(c), m + 1)], A):
+        for f in fvgs(c[:min(len(c), m + 1)], Am):
             if f["dir"] == -1 and f["i"] > j and (not z or f["top"] - f["bot"] > z["top"] - z["bot"]):
                 z = {"top": f["top"], "bot": f["bot"], "i": f["i"], "t": "FVG"}
         if not z:
@@ -124,20 +125,25 @@ def detect_sell(c, A, n):
         lo2, hi2 = max(olo, z["bot"]), min(ohi, z["top"])
         ote = lo2 <= hi2
         e = (lo2 + hi2) / 2 if ote else (z["top"] + z["bot"]) / 2
-        sl = sh + 0.25 * A
+        sl = sh + 0.25 * Am
         risk = sl - e
-        if risk < 0.4 * A or risk > 3.5 * A: continue            # absurd stop distance: skip
-        pools = sorted([l["p"] for l in L if l["p"] < e - 0.5 * A
+        if risk < 0.4 * Am or risk > 3.5 * Am: continue            # absurd stop distance: skip
+        pools = sorted([l["p"] for l in L if l["p"] < e - 0.5 * Am
                         and all(c[q]["l"] > l["p"] for q in range(l["i"] + 1, len(c)))], reverse=True)
         tps = []
         for p in pools:                                          # sniper: just before the liquidity
-            tp = p + 0.1 * A
-            if e - tp >= 1.2 * risk and (not tps or tp < tps[-1] - 0.5 * A) and len(tps) < 3: tps.append(tp)
+            tp = p + 0.1 * Am
+            if e - tp >= 1.2 * risk and (not tps or tp < tps[-1] - 0.5 * Am) and len(tps) < 3: tps.append(tp)
         for mu in (1.5, 2.5, 4.0, 5.5):
             tp = e - risk * mu
-            if len(tps) < 3 and (not tps or tp < tps[-1] - 0.8 * A): tps.append(tp)
-        eq = sum(1 for x in H if x["i"] < j and x is not h and abs(x["p"] - h["p"]) <= 0.3 * A)
-        s = {"j": j, "m": m, "sweepP": h["p"], "ext": sh, "wick": wick, "disp": disp, "eq": eq,
+            if len(tps) < 3 and (not tps or tp < tps[-1] - 0.8 * Am): tps.append(tp)
+        mu = 7.0
+        while len(tps) < 3:                                      # always end with three targets
+            tp = e - risk * mu
+            if not tps or tp < tps[-1] - 0.8 * Am: tps.append(tp)
+            mu += 1.5
+        eq = sum(1 for x in H if x["i"] < j and x is not h and abs(x["p"] - h["p"]) <= 0.3 * Am)
+        s = {"j": j, "m": m, "sweepP": h["p"], "ext": sh, "wick": wick, "disp": disp, "eq": eq, "A": Am,
              "leg": (leg_lo, sh), "ote_band": (olo, ohi), "ote": ote, "z": z, "entry": e, "sl": sl, "tps": tps}
         s["st"] = status(c, s)
         out.append(s)
@@ -175,12 +181,12 @@ def scan(c, hc):
     for s in res:
         d, e = s["dir"], s["entry"]
         s["rr"] = [abs(t - e) / abs(s["sl"] - e) for t in s["tps"]]
-        near = any(l["k"] == ("R" if d == -1 else "S") and abs(l["p"] - e) <= 1.5 * A for l in lv)
+        near = any(l["k"] == ("R" if d == -1 else "S") and abs(l["p"] - e) <= 1.5 * s["A"] for l in lv)
         s["ses"] = session(c[s["m"]]["t"])
         s["checks"] = [
             ("HTF bias aligned", hb == d, 20), ("LTF structure aligned", b == d, 6),
             ("EMA50 side", price < e50 if d == -1 else price > e50, 4),
-            ("Sweep wick quality", s["wick"] >= 0.25 * A, 6), ("Equal-level liquidity", s["eq"] >= 1, 4),
+            ("Sweep wick quality", s["wick"] >= 0.25 * s["A"], 6), ("Equal-level liquidity", s["eq"] >= 1, 4),
             ("Strong displacement", s["disp"] >= 1.0, 14), ("FVG entry zone", s["z"]["t"] == "FVG", 8),
             ("OTE overlap", s["ote"], 10), ("Killzone timing", s["ses"][1], 10),
             ("RR to TP1 at least 1.5", s["rr"][0] >= 1.5, 6),
@@ -615,9 +621,24 @@ def scan_and_alert(st, args, chats):
             name, ic = SIDE[s["dir"]]
             broadcast([("msg", "🌙 <b>UPDATE</b> · %s %s %s %s\n%s %s\nEntry %s · SL %s · TP1 %s" % (
                 ic, name, E(args.symbol), cfg["tf"], STATE_ICON.get(code, "•"), E(s["st"]["t"]), f2(s["entry"]), f2(s["sl"]), f2(s["tps"][0])), True)], chats)
-    st["hist"] = st["hist"][-40:]
+    st["hist"] = st["hist"][-500:]
 
 # ================================================================ main
+
+def publish_feed(st, args, folder):
+    """Write data/feed.json and data/candles.json for the website (GitHub Pages)."""
+    R = get_R(st, args); cfg = st["cfg"]; d = os.path.join(folder, "data"); os.makedirs(d, exist_ok=True)
+    def sig(s):
+        return {"dir": "SELL" if s["dir"] == -1 else "BUY", "grade": s["grade"], "score": s["score"], "entry": round(s["entry"], 2),
+                "sl": round(s["sl"], 2), "tps": [round(x, 2) for x in s["tps"]], "rr": [round(x, 2) for x in s["rr"]],
+                "status": s["st"]["t"], "code": s["st"]["code"], "zone": [round(s["z"]["bot"], 2), round(s["z"]["top"], 2), s["z"]["t"]],
+                "ote": s["ote"], "session": s["ses"][0], "t": R["c"][s["m"]]["t"], "checks": [[n, ok] for n, ok, _ in s["checks"]]}
+    now = int(time.time())
+    json.dump({"updated": now, "symbol": args.symbol, "tf": cfg["tf"], "price": round(R["price"], 2), "atr": round(R["A"], 2),
+               "bias": R["bias"], "hbias": R["hbias"], "signals": [sig(s) for s in R["sigs"]], "history": st["hist"][-200:]},
+              open(os.path.join(d, "feed.json"), "w"))
+    json.dump({"updated": now, "symbol": args.symbol, "tf": cfg["tf"],
+               "candles": [[x["t"], x["o"], x["h"], x["l"], x["c"]] for x in R["c"][-300:]]}, open(os.path.join(d, "candles.json"), "w"))
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -627,6 +648,7 @@ def main():
     ap.add_argument("--interval", type=int, default=300, help="seconds between alert scans in --poll mode")
     ap.add_argument("--state", default="moon_state.json")
     ap.add_argument("--once", action="store_true"); ap.add_argument("--poll", action="store_true")
+    ap.add_argument("--publish", default=None, metavar="DIR", help="write data/feed.json and data/candles.json into DIR for the website")
     ap.add_argument("--cmd", default=None, help='run one command, e.g. --cmd "/scan"')
     a = ap.parse_args()
     a.symbol = a.symbol or {"yahoo": "GC=F", "twelvedata": "XAU/USD"}.get(a.source, "XAUUSD")
@@ -642,14 +664,19 @@ def main():
         deliver(run_command(st, a, a.cmd), chats[0] if chats else None); save_state(st, a.state); return
     if a.once:
         if chats: handle_updates(st, a, chats, 0)
-        scan_and_alert(st, a, chats); save_state(st, a.state); return
+        scan_and_alert(st, a, chats)
+        if a.publish: publish_feed(st, a, a.publish)
+        save_state(st, a.state); return
     if not (os.environ.get("TELEGRAM_TOKEN") and chats): sys.exit("Set TELEGRAM_TOKEN and TELEGRAM_CHAT_ID for --poll.")
     broadcast([("msg", "🌙 Moon Signal Bot is awake. Send /help.", True)], chats)
     nxt = 0
     while True:
         try:
             handle_updates(st, a, chats, 25)
-            if time.time() >= nxt: scan_and_alert(st, a, chats); nxt = time.time() + a.interval
+            if time.time() >= nxt:
+                scan_and_alert(st, a, chats)
+                if a.publish: publish_feed(st, a, a.publish)
+                nxt = time.time() + a.interval
             save_state(st, a.state)
         except KeyboardInterrupt: break
         except Exception as e:
