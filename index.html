@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>LUNAR · XAUUSD signal desk</title>
+<style>
+:root{--bg:#050505;--fg:#f4f4f2;--mute:#8d8d8d;--line:rgba(255,255,255,.14);--card:rgba(255,255,255,.045);--hi:#fff;--bad:#ff8a8a;--ok:#bdf5d6;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:light){:root:not([data-theme="dark"]){--bg:#f6f6f3;--fg:#0a0a0a;--mute:#6a6a6a;--line:rgba(0,0,0,.16);--card:rgba(0,0,0,.035);--hi:#000;--bad:#a12222;--ok:#176a45}}
+:root[data-theme="light"]{--bg:#f6f6f3;--fg:#0a0a0a;--mute:#6a6a6a;--line:rgba(0,0,0,.16);--card:rgba(0,0,0,.035);--hi:#000;--bad:#a12222;--ok:#176a45}
+*{box-sizing:border-box}html{scroll-behavior:smooth;scroll-padding-top:70px}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.6 "Helvetica Neue",Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased}
+a{color:inherit}.wrap{max-width:1040px;margin:0 auto;padding:0 18px}
+nav{position:sticky;top:env(safe-area-inset-top,0px);z-index:9;background:color-mix(in srgb,var(--bg) 82%,transparent);backdrop-filter:blur(14px);border-bottom:1px solid var(--line)}
+nav .wrap{display:flex;align-items:center;gap:14px;height:56px;overflow-x:auto;white-space:nowrap}
+nav a{text-decoration:none;font-size:.85rem;letter-spacing:.08em;text-transform:uppercase;color:var(--mute)}nav a:hover{color:var(--fg)}
+.logo{font-weight:700;letter-spacing:.3em;color:var(--fg)!important;display:flex;align-items:center;gap:10px;margin-right:auto}
+.cres{position:relative;width:1em;height:1em;border-radius:50%;background:var(--fg);overflow:hidden;display:inline-block}
+.cres::after{content:"";position:absolute;width:100%;height:100%;border-radius:50%;background:var(--bg);left:34%;top:-8%}
+.sheen{background:linear-gradient(110deg,var(--mute) 20%,var(--hi) 45%,var(--mute) 70%);background-size:220% auto;-webkit-background-clip:text;background-clip:text;color:transparent;animation:sh 7s linear infinite}
+@keyframes sh{to{background-position:-220% center}}
+@media (prefers-reduced-motion:reduce){.sheen,.btn::after{animation:none}}
+.hero{text-align:center;padding:78px 0 56px;position:relative;overflow:hidden}
+.moon{font-size:clamp(110px,26vw,190px);margin:0 auto 26px;display:block;filter:drop-shadow(0 0 34px color-mix(in srgb,var(--fg) 45%,transparent))}
+h1{font-size:clamp(2.1rem,7vw,4rem);line-height:1.05;letter-spacing:-.03em;margin:0 0 14px;font-weight:600}
+.lead{color:var(--mute);max-width:56ch;margin:0 auto 26px}
+.btn{position:relative;overflow:hidden;display:inline-block;border:1px solid var(--fg);background:var(--fg);color:var(--bg);padding:11px 22px;border-radius:999px;font:600 .85rem inherit;letter-spacing:.06em;text-transform:uppercase;text-decoration:none;cursor:pointer}
+.btn.ghost{background:transparent;color:var(--fg);border-color:var(--line)}
+.btn::after{content:"";position:absolute;top:0;left:-60%;width:40%;height:100%;background:linear-gradient(100deg,transparent,rgba(255,255,255,.55),transparent);transform:skewX(-20deg);animation:sw 4.5s ease-in-out infinite}
+.btn.ghost::after{display:none}@keyframes sw{60%,100%{left:130%}}
+button{font-family:inherit}button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible,a:focus-visible{outline:2px solid var(--fg);outline-offset:2px}
+section{padding:54px 0;border-top:1px solid var(--line)}
+h2{font-size:clamp(1.5rem,4.5vw,2.2rem);letter-spacing:-.02em;margin:0 0 6px;font-weight:600}
+.sub{color:var(--mute);margin:0 0 24px;max-width:64ch}.note{font-size:.82rem;color:var(--mute);border:1px dashed var(--line);border-radius:10px;padding:8px 12px;margin:0 0 20px}
+.grid{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(290px,1fr))}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px;position:relative}
+.card h3{margin:0 0 10px;font-size:.78rem;letter-spacing:.14em;text-transform:uppercase;color:var(--mute);font-weight:600}
+.chips{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}
+.chip{border:1px solid var(--line);background:transparent;color:var(--mute);border-radius:999px;padding:6px 14px;font-size:.8rem;cursor:pointer}
+.chip[aria-pressed="true"]{color:var(--bg);background:var(--fg);border-color:var(--fg)}
+.sig .top{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.grade{font-weight:700;font-size:1.5rem;letter-spacing:.02em}.side{font-size:.78rem;letter-spacing:.14em;border:1px solid var(--line);border-radius:6px;padding:2px 8px}
+.px{display:grid;grid-template-columns:auto 1fr;gap:2px 14px;font-variant-numeric:tabular-nums;font-size:.92rem;margin:10px 0}
+.px span:nth-child(odd){color:var(--mute)}
+.bar{height:3px;background:var(--line);border-radius:3px;overflow:hidden;margin:6px 0 12px}.bar i{display:block;height:100%;background:var(--fg)}
+.tags{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}.tags span{font-size:.72rem;border:1px solid var(--line);border-radius:6px;padding:1px 8px;color:var(--mute)}
+.row{display:flex;gap:8px;flex-wrap:wrap}.row .btn{padding:7px 14px;font-size:.72rem}
+label{display:block;font-size:.76rem;color:var(--mute);margin-bottom:8px}
+input,select,textarea{width:100%;background:transparent;border:1px solid var(--line);border-radius:10px;color:var(--fg);padding:9px 10px;font:inherit;font-size:.95rem;margin-top:3px}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.out{border-top:1px solid var(--line);margin-top:10px;padding-top:10px;font-variant-numeric:tabular-nums;font-size:.92rem}.out b{font-size:1.2rem}
+.warn{color:var(--bad)}.good{color:var(--ok)}
+.clock{font-size:2rem;font-weight:300;letter-spacing:.04em;font-variant-numeric:tabular-nums}
+.chk label{display:flex;gap:10px;align-items:flex-start;color:var(--fg);font-size:.9rem;margin:6px 0;cursor:pointer}.chk input{width:auto;margin-top:5px}
+.score{font-size:2.4rem;font-weight:600;line-height:1}
+.steps{counter-reset:s;display:grid;gap:12px}.steps li{list-style:none;counter-increment:s;border:1px solid var(--line);border-radius:14px;padding:14px 16px 14px 56px;position:relative;background:var(--card)}
+.steps li::before{content:counter(s);position:absolute;left:16px;top:12px;width:28px;height:28px;border:1px solid var(--fg);border-radius:50%;text-align:center;line-height:26px;font-size:.85rem}
+.steps b{display:block}.steps span{color:var(--mute);font-size:.92rem}
+.chat{display:flex;flex-direction:column;height:430px}
+.msgs{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:10px;padding-bottom:8px}
+.m{max-width:88%;padding:9px 13px;border-radius:14px;border:1px solid var(--line);white-space:pre-wrap;font-size:.94rem}
+.m.u{align-self:flex-end;background:var(--fg);color:var(--bg)}.m.a{align-self:flex-start;background:var(--card)}
+.send{display:flex;gap:8px;align-items:flex-end}.send textarea{height:46px;resize:none;margin:0}
+.sug{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px}.sug .chip{font-size:.72rem;padding:4px 10px}
+svg{display:block;width:100%}
+footer{border-top:1px solid var(--line);padding:34px 0 50px;color:var(--mute);font-size:.82rem;text-align:center}
+.lab2{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));margin-top:14px}
+.sum{display:grid;grid-template-columns:1fr 1fr;gap:8px;align-content:start}.sum div{border:1px solid var(--line);border-radius:12px;padding:8px 12px;background:var(--card)}
+.sum span{display:block;font-size:.68rem;letter-spacing:.1em;text-transform:uppercase;color:var(--mute)}.sum b{font-weight:500;font-size:.95rem}
+.sg{cursor:pointer;margin-bottom:12px}.sg.on{border-color:var(--fg)}input[type=range]{padding:0;border:0;accent-color:var(--fg)}
+#ftab{width:100%;border-collapse:collapse;font-size:.88rem}#ftab td,#ftab th{text-align:left;padding:6px 8px;border-bottom:1px solid var(--line);white-space:nowrap}#ftab th{color:var(--mute);font-weight:500}
+</style>
+</head>
+<body>
+<nav><div class="wrap"><a class="logo" href="#top"><span class="cres"></span>LUNAR</a>
+<a href="#lab">Chart lab</a><a href="#signals">Signals</a><a href="#tools">Tools</a><a href="#strategy">Strategy</a><a href="#journal">Journal</a>
+<a href="#" id="theme" aria-label="Toggle light or dark">◐</a></div></nav>
+
+<header class="hero" id="top"><div class="wrap">
+<span class="cres moon" aria-hidden="true"></span>
+<h1 class="sheen">Trade gold by moonlight.</h1>
+<p class="lead">A quiet desk for XAUUSD: a chart analyzer, graded setups, a risk toolkit, a rules-first strategy and an AI mentor. No noise, no promises.</p>
+<a class="btn" href="#lab">Open chart lab</a> <a class="btn ghost" href="#signals">Signal board</a> <a class="btn ghost" href="https://t.me/YOUR_BOT_USERNAME">Telegram alerts</a>
+</div></header>
+
+<section id="lab"><div class="wrap">
+<h2>Chart lab</h2><p class="sub">Paste or upload candles and the analyzer maps ICT, SMC and MSNR structure, plots entry, stop and three targets, and adds a buy / sell indicator. Replay the demo to watch a setup form, trigger and play out.</p>
+<div class="note"><b>Live</b> loads the candles the bot last published (it refreshes each time the bot runs, about every 15 minutes). You can also paste candles from TradingView or MT5, or upload a CSV. The demo is synthetic.</div>
+<div class="row" style="margin-bottom:12px"><button class="btn" id="llive">● Live</button><button class="btn ghost" id="ldemo">Load demo</button><button class="btn ghost" id="lplay">▶ Replay</button><button class="btn ghost" id="lstep">Step ›</button>
+<select id="lspd" style="width:auto;margin:0" aria-label="Replay speed"><option value="900">Slow</option><option value="450" selected>Normal</option><option value="180">Fast</option></select>
+<label class="btn ghost" style="margin:0">Upload CSV<input id="lfile" type="file" accept=".csv,.txt" hidden></label><span id="lin" style="color:var(--mute);font-size:.85rem;align-self:center"></span></div>
+<div class="chips" id="llay"><button class="chip" aria-pressed="true" data-l="smc">ICT / SMC</button><button class="chip" aria-pressed="true" data-l="msnr">MSNR levels</button><button class="chip" aria-pressed="true" data-l="ind">Buy / Sell indicator</button></div>
+<canvas id="lc" style="width:100%;height:440px;display:block;border:1px solid var(--line);border-radius:16px" role="img" aria-label="Candlestick chart with analysis"></canvas>
+<input id="lpos" type="range" min="60" max="136" value="70" style="margin:10px 0 0" aria-label="Replay position">
+<div class="lab2"><div class="sum" id="lsum"></div><div id="lsig"></div></div>
+<details style="margin-top:14px"><summary style="cursor:pointer;color:var(--mute)">Paste candles</summary><textarea id="lpaste" rows="6" placeholder="time,open,high,low,close&#10;2026-11-20T10:00:00Z,3600.5,3610.2,3598.0,3605.1" style="margin-top:8px;font-family:ui-monospace,monospace;font-size:.8rem"></textarea></details>
+</div></section>
+
+<section id="signals"><div class="wrap">
+<h2>Live signals</h2><p class="sub" id="fupd">Connecting…</p>
+<div class="chips"><span class="chip" id="fdot" style="color:var(--fg)">○ OFFLINE</span><a class="chip" href="https://t.me/YOUR_BOT_USERNAME" style="text-decoration:none">Get alerts on Telegram</a></div>
+<div class="grid" id="fsig"></div>
+<h2 style="margin-top:36px;font-size:1.3rem">Signal ledger</h2><p class="sub">Every signal the bot has issued, with its real outcome. Counts, not claims: a small sample proves nothing. Signals are rule-based and unproven until backtested.</p>
+<div class="sum" id="fled"></div><div class="card" style="margin-top:14px;overflow-x:auto"><table id="ftab"></table></div>
+</div></section>
+
+<section id="tools"><div class="wrap">
+<h2>Trader toolkit</h2><p class="sub">Everything runs in your browser. Nothing you type leaves this page except messages to the AI desk.</p>
+<div class="grid">
+<div class="card"><h3>Position size</h3>
+<div class="two"><label>Account ($)<input id="acc" type="number" value="1000" min="0"></label><label>Risk (%)<input id="rk" type="number" value="1" step="0.1" min="0"></label>
+<label>Entry<input id="en" type="number" value="3793" step="0.01"></label><label>Stop loss<input id="sl" type="number" value="3855" step="0.01"></label>
+<label>TP1<input id="t1" type="number" value="3650" step="0.01"></label><label>TP2<input id="t2" type="number" value="3545" step="0.01"></label></div>
+<div class="out" id="calc"></div></div>
+
+<div class="card"><h3>Session clock</h3><div class="clock" id="clk">--:--:--</div><div id="clk2" style="color:var(--mute);font-size:.9rem"></div>
+<div class="out" id="ses"></div><p style="font-size:.78rem;color:var(--mute);margin:8px 0 0">Killzones: London 07:00–10:00 UTC, New York 12:00–15:00 UTC (approximate; shifts with daylight saving).</p></div>
+
+<div class="card chk"><h3>Score your setup</h3><div id="items"></div>
+<div class="out"><span class="score" id="sc">0</span> / 100 · <b id="gr">C</b><div class="bar"><i id="scb" style="width:0"></i></div><span id="scm" style="color:var(--mute);font-size:.85rem"></span></div></div>
+
+<div class="card"><h3>Pivot points</h3>
+<div class="two"><label>High<input id="ph" type="number" value="3860" step="0.01"></label><label>Low<input id="pl" type="number" value="3745" step="0.01"></label><label>Close<input id="pc" type="number" value="3790" step="0.01"></label></div>
+<div class="out" id="piv"></div></div>
+</div></div></section>
+
+<section id="strategy"><div class="wrap">
+<h2>The Lunar method</h2><p class="sub">One setup, six steps, written down so you can test it.</p>
+<ol class="steps" style="padding:0;margin:0">
+<li><b>Read the higher timeframe</b><span>Trade with the H1 or H4 structure. Sells in a bearish higher-timeframe trend, buys in a bullish one. Counter-trend trades get a lower grade.</span></li>
+<li><b>Map fresh liquidity (MSNR)</b><span>Mark swing highs and lows price has not revisited. Equal highs or lows are where stops cluster.</span></li>
+<li><b>Wait for the sweep</b><span>Price wicks through the level and closes back inside. A wick of at least a quarter ATR is a cleaner sweep than a tiny poke.</span></li>
+<li><b>Confirm the shift</b><span>A close beyond the last swing with a body of 1× ATR or more. Weak shifts are skipped.</span></li>
+<li><b>Enter on the retest</b><span>Use the fair value gap or order block, ideally overlapping the 62–79% retracement. Stop beyond the sweep extreme.</span></li>
+<li><b>Take profit before the pool</b><span>Targets sit just short of untouched liquidity. Close 50% at TP1 and move the stop to breakeven, then 30% and 20%.</span></li></ol>
+<div class="card" style="margin-top:14px"><h3>Rules that protect you</h3>
+<p style="margin:0;color:var(--mute)">Risk 0.5–1% per trade. One setup at a time. No entries within minutes of high-impact US data. Stop after two losses in a day. Skip any trade below 1:1.5 to TP1. A high grade raises the odds a little; it never guarantees a win.</p></div>
+</div></section>
+
+<section id="journal"><div class="wrap">
+<h2>Trade journal</h2><p class="sub">Log each trade as a result in R. Stored only in this browser. The honest record is the one thing that shows whether you have an edge.</p>
+<div class="grid"><div class="card"><h3>Add trade</h3>
+<div class="two"><label>Side<select id="js"><option>SELL</option><option>BUY</option></select></label><label>Result (R)<input id="jr" type="number" step="0.1" value="1"></label></div>
+<label>Note<input id="jn" type="text" maxlength="80" placeholder="Setup, grade, mistake…"></label>
+<div class="row"><button class="btn" id="jadd">Add</button><button class="btn ghost" id="jclr">Clear all</button></div></div>
+<div class="card"><h3>Statistics</h3><div class="out" id="jst" style="border:0;margin:0;padding:0"></div><svg id="spk" viewBox="0 0 300 70" aria-label="Equity curve in R"></svg><div id="jl" style="font-size:.84rem;color:var(--mute);margin-top:8px"></div></div></div>
+</div></section>
+
+<footer><div class="wrap"><span class="cres" style="font-size:22px;vertical-align:middle"></span><p>LUNAR · XAUUSD signal desk<br>Trading gold and leveraged products carries a high risk of loss. Everything here is general information, not financial advice. Past or example results do not predict future results.</p></div></footer>
+
+<script>
+(function(){
+var $=function(i){return document.getElementById(i)},f2=function(x){return (+x).toFixed(2)};
+function calc(){var a=+$("acc").value,r=+$("rk").value,e=+$("en").value,s=+$("sl").value,t1=+$("t1").value,t2=+$("t2").value,d=Math.abs(e-s),risk=a*r/100,o=$("calc");
+if(!d){o.innerHTML='<span class="warn">Entry and stop can’t match.</span>';return}
+var dir=s>e?"SELL":"BUY",lot=risk/(d*100),ok=dir==="SELL"?t1<e:t1>e;
+o.innerHTML='Direction <b>'+dir+'</b> · risk <b>$'+f2(risk)+'</b> · stop '+f2(d)+' pts<br>Lot size <b>'+(lot>=0.01?(Math.floor(lot*100)/100).toFixed(2):"under 0.01")+'</b>'+(lot<0.01?' <span class="warn">stop too wide for this risk</span>':'')+
+'<br>'+(ok?'RR to TP1 <b>1 : '+(Math.abs(t1-e)/d).toFixed(2)+'</b>'+(t2&&((dir==="SELL"&&t2<e)||(dir==="BUY"&&t2>e))?' · TP2 <b>1 : '+(Math.abs(t2-e)/d).toFixed(2)+'</b>':''):'<span class="warn">TP1 is on the wrong side of entry.</span>')+'<br><span style="color:var(--mute);font-size:.8rem">1 lot = 100 oz. Check your broker’s contract size.</span>'}
+["acc","rk","en","sl","t1","t2"].forEach(function(i){$(i).oninput=calc});calc();
+
+function clock(){var n=new Date(),p=function(x){return("0"+x).slice(-2)},u=n.getUTCHours()*60+n.getUTCMinutes(),g=(n.getUTCHours()+7)%24;
+$("clk").textContent=p(n.getUTCHours())+":"+p(n.getUTCMinutes())+":"+p(n.getUTCSeconds())+" UTC";$("clk2").textContent=p(g)+":"+p(n.getUTCMinutes())+" GMT+7 (Phnom Penh)";
+var W=[["London killzone",420,600],["New York killzone",720,900]],h="",live=null,nx=null;
+W.forEach(function(w){if(u>=w[1]&&u<w[2])live=w;var d=(w[1]-u+1440)%1440;if(!nx||d<nx[1])nx=[w[0],d]});
+h=live?'<b class="good">● '+live[0]+' is open</b> · closes in '+(live[2]-u)+' min':'<b>Off-session</b> · next: '+nx[0]+' in '+Math.floor(nx[1]/60)+'h '+nx[1]%60+'m';
+if(n.getUTCDay()===0||n.getUTCDay()===6)h='<b>Weekend</b> · gold markets are mostly closed';$("ses").innerHTML=h}
+clock();setInterval(clock,1000);
+
+var IT=[["Higher-timeframe bias aligned",20],["LTF structure aligned",6],["Price on the right side of EMA50",4],["Sweep wick at least 0.25 ATR",6],["Equal highs or lows swept",4],["Displacement body 1× ATR or more",14],["Entry in an FVG",8],["OTE (62–79%) overlap",10],["London or New York killzone",10],["RR to TP1 at least 1.5",6],["Premium for sells, discount for buys",6],["Fresh MSNR level nearby",6]];
+$("items").innerHTML=IT.map(function(x,i){return'<label><input type="checkbox" data-i="'+i+'"><span>'+x[0]+' <small style="color:var(--mute)">+'+x[1]+'</small></span></label>'}).join("");
+$("items").onchange=function(){var t=0;[].forEach.call($("items").querySelectorAll("input"),function(c){if(c.checked)t+=IT[c.dataset.i][1]});
+var g=t>=90?"S+":t>=75?"A":t>=60?"B":"C";$("sc").textContent=t;$("gr").textContent=g;$("scb").style.width=t+"%";
+$("scm").textContent=g==="S+"?"Top-tier alignment. Still risk small.":g==="A"?"Strong setup.":g==="B"?"Acceptable. Consider half size.":"Skip it, or wait for more confluence."};
+
+function piv(){var H=+$("ph").value,L=+$("pl").value,C=+$("pc").value,P=(H+L+C)/3,R=H-L;
+var v=[["R3",H+2*(P-L)],["R2",P+R],["R1",2*P-L],["Pivot",P],["S1",2*P-H],["S2",P-R],["S3",L-2*(H-P)]];
+$("piv").innerHTML=v.map(function(x){return'<div style="display:flex;justify-content:space-between"><span style="color:var(--mute)">'+x[0]+'</span><span>'+f2(x[1])+'</span></div>'}).join("")}
+["ph","pl","pc"].forEach(function(i){$(i).oninput=piv});piv();
+
+var J=[];try{J=JSON.parse(localStorage.getItem("lunar-j")||"[]")}catch(e){}
+function sv(){try{localStorage.setItem("lunar-j",JSON.stringify(J))}catch(e){}}
+function jr(){var n=J.length,w=J.filter(function(x){return x.r>0}).length,t=J.reduce(function(a,x){return a+x.r},0);
+$("jst").innerHTML=n?'Trades <b>'+n+'</b> · win rate <b>'+Math.round(100*w/n)+'%</b> · avg <b>'+(t/n).toFixed(2)+'R</b> · total <b>'+t.toFixed(1)+'R</b>':'No trades logged yet.';
+var e=0,pts=J.map(function(x,i){e+=x.r;return e}),mx=Math.max.apply(null,pts.concat([1])),mn=Math.min.apply(null,pts.concat([0])),svg="";
+if(pts.length>1){svg='<polyline fill="none" stroke="currentColor" stroke-width="1.6" points="'+pts.map(function(p,i){return(i/(pts.length-1)*290+5)+","+(65-(p-mn)/(mx-mn||1)*58)}).join(" ")+'"/>'}
+$("spk").innerHTML=svg;$("jl").textContent=J.slice(-5).reverse().map(function(x){return x.s+" "+(x.r>0?"+":"")+x.r+"R "+x.n}).join("  ·  ")}
+$("jadd").onclick=function(){var r=parseFloat($("jr").value);if(isNaN(r))return;J.push({s:$("js").value,r:r,n:$("jn").value.slice(0,80)});sv();$("jn").value="";jr()};
+$("jclr").onclick=function(){if(J.length&&confirm("Delete all journal entries?")){J=[];sv();jr()}};jr();
+
+var th=$("theme");th.onclick=function(e){e.preventDefault();var d=document.documentElement,l=d.dataset.theme?d.dataset.theme==="light":matchMedia("(prefers-color-scheme:light)").matches;d.dataset.theme=l?"dark":"light"};
+
+
+})();
+</script>
+<script>
+/*ENG*/
+function atr(c,n){n=n||14;var k=Math.min(n,c.length-1),s=0;for(var i=c.length-k;i<c.length;i++)s+=Math.max(c[i].h-c[i].l,Math.abs(c[i].h-c[i-1].c),Math.abs(c[i].l-c[i-1].c));return s/k}
+function emaA(c,n){var k=2/(n+1),e=c[0].c;return c.map(function(x){e=x.c*k+e*(1-k);return e})}
+function rsiA(c,n){var o=[],g=0,l=0;for(var i=0;i<c.length;i++){if(!i){o.push(50);continue}var d=c[i].c-c[i-1].c;if(i<=n){g+=Math.max(d,0);l+=Math.max(-d,0);if(i===n){g/=n;l/=n}o.push(i<n?50:100-100/(1+(l?g/l:1e9)))}else{g=(g*(n-1)+Math.max(d,0))/n;l=(l*(n-1)+Math.max(-d,0))/n;o.push(100-100/(1+(l?g/l:1e9)))}}return o}
+function swings(c,n){var H=[],L=[];for(var i=n;i<c.length-n;i++){var hi=true,lo=true;for(var j=1;j<=n;j++){if(c[i].h<=c[i-j].h||c[i].h<=c[i+j].h)hi=false;if(c[i].l>=c[i-j].l||c[i].l>=c[i+j].l)lo=false}if(hi)H.push({i:i,p:c[i].h});if(lo)L.push({i:i,p:c[i].l})}return{H:H,L:L}}
+function bias(w){var H=w.H,L=w.L;if(H.length<2||L.length<2)return 0;var a=H[H.length-1].p>H[H.length-2].p,b=L[L.length-1].p>L[L.length-2].p;return a&&b?1:(!a&&!b?-1:0)}
+function levels(c,w){var o=[];w.H.forEach(function(h){var m=-1e18;for(var k=h.i+1;k<c.length;k++)m=Math.max(m,c[k].h);if(m<h.p)o.push({p:h.p,k:"R",i:h.i})});w.L.forEach(function(l){var m=1e18;for(var k=l.i+1;k<c.length;k++)m=Math.min(m,c[k].l);if(m>l.p)o.push({p:l.p,k:"S",i:l.i})});return o.filter(function(x){return x.i>=c.length-200})}
+function fvgs(c,A){var o=[];for(var i=2;i<c.length;i++){var b=null;if(c[i].l>c[i-2].h)b={dir:1,top:c[i].l,bot:c[i-2].h,i:i};else if(c[i].h<c[i-2].l)b={dir:-1,top:c[i-2].l,bot:c[i].h,i:i};if(!b||b.top-b.bot<.15*A)continue;var ok=true;for(var k=i+1;k<c.length;k++){if(b.dir===1&&c[k].c<b.bot||b.dir===-1&&c[k].c>b.top){ok=false;break}}if(ok)o.push(b)}return o}
+function mirror(c){return c.map(function(x){return{t:x.t,o:-x.o,h:-x.l,l:-x.h,c:-x.c}})}
+function resample(c,k){var o=[];for(var i=0;i+k<=c.length;i+=k){var g=c.slice(i,i+k);o.push({t:g[0].t,o:g[0].o,h:Math.max.apply(null,g.map(function(x){return x.h})),l:Math.min.apply(null,g.map(function(x){return x.l})),c:g[k-1].c})}return o}
+function status(c,s){var k,k0=-1;for(k=Math.max(s.m,s.z.i)+1;k<c.length;k++){if(c[k].h>=s.entry){k0=k;break}if(c[k].l<=s.tps[0])return{t:"Missed (TP1 hit before retest)",live:false,code:"missed"}}
+if(k0<0){if(c.length-1-s.m>60)return{t:"Expired",live:false,code:"expired"};return{t:"Waiting for retest",live:true,code:"wait"}}
+var hit=0;for(k=k0;k<c.length;k++){if(c[k].h>=s.sl)return{t:hit?"TP"+hit+" hit, then stopped":"Stopped out",live:false,code:"stop"};while(hit<3&&c[k].l<=s.tps[hit])hit++;if(hit===3)return{t:"All targets hit",live:false,code:"tp3"}}
+return{t:hit?"TP"+hit+" hit, trade open":"Entry triggered",live:true,code:hit?"tp"+hit:"open"}}
+function detect(c,A,n){var w=swings(c,n),H=w.H,L=w.L,out=[];H.forEach(function(h){var j=-1,k;for(k=h.i+1;k<c.length;k++)if(c[k].h>h.p){j=k;break}
+if(j<0||c[j].c>=h.p||j<c.length-90)return;var sh=c[j].h;for(k=j+1;k<=Math.min(j+2,c.length-1);k++)sh=Math.max(sh,c[k].h);var wick=sh-h.p;
+var ref=null;L.forEach(function(l){if(l.i>h.i&&l.i<j)ref=l});if(!ref)return;var m=-1;for(k=j+1;k<Math.min(c.length,j+26);k++){if(c[k].c>sh)break;if(c[k].c<ref.p){m=k;break}}if(m<0)return;var Am=atr(c.slice(0,m+1));if(wick<.1*Am)return;
+var disp=0,lo=1e18;for(k=j+1;k<=m;k++)disp=Math.max(disp,c[k].o-c[k].c);disp/=Am;if(disp<.6)return;for(k=j;k<=m;k++)lo=Math.min(lo,c[k].l);
+var z=null;fvgs(c.slice(0,Math.min(c.length,m+1)),Am).forEach(function(f){if(f.dir===-1&&f.i>j&&(!z||f.top-f.bot>z.top-z.bot))z={top:f.top,bot:f.bot,i:f.i,t:"FVG"}});
+if(!z){for(k=m;k>=j;k--)if(c[k].c>c[k].o){z={top:c[k].h,bot:c[k].l,i:m,t:"OB"};break}}if(!z)return;
+var rg=sh-lo,a=Math.max(lo+.62*rg,z.bot),b=Math.min(lo+.79*rg,z.top),ote=a<=b,e=ote?(a+b)/2:(z.top+z.bot)/2,sl=sh+.25*Am,risk=sl-e;if(risk<.4*Am||risk>3.5*Am)return;
+var pools=L.filter(function(l){if(l.p>=e-.5*Am)return false;for(var q=l.i+1;q<c.length;q++)if(c[q].l<=l.p)return false;return true}).map(function(l){return l.p}).sort(function(x,y){return y-x}),tps=[];
+pools.forEach(function(p){var tp=p+.1*Am;if(tps.length<3&&e-tp>=1.2*risk&&(!tps.length||tp<tps[tps.length-1]-.5*Am))tps.push(tp)});
+[1.5,2.5,4,5.5].forEach(function(mu){var tp=e-risk*mu;if(tps.length<3&&(!tps.length||tp<tps[tps.length-1]-.8*Am))tps.push(tp)});
+var mu=7;while(tps.length<3){var tp=e-risk*mu;if(!tps.length||tp<tps[tps.length-1]-.8*Am)tps.push(tp);mu+=1.5}
+var eq=0;H.forEach(function(x){if(x.i<j&&x!==h&&Math.abs(x.p-h.p)<=.3*Am)eq++});
+var s={j:j,m:m,sweepP:h.p,ext:sh,wick:wick,disp:disp,eq:eq,A:Am,ote:ote,z:z,entry:e,sl:sl,tps:tps};s.st=status(c,s);out.push(s)});return out}
+function unm(s){var u={};for(var k in s)u[k]=s[k];["sweepP","ext","entry","sl"].forEach(function(k){u[k]=-s[k]});u.tps=s.tps.map(function(x){return-x});u.z={top:-s.z.bot,bot:-s.z.top,i:s.z.i,t:s.z.t};return u}
+function sess(t){if(!t)return["Unknown",false];var h=new Date(t*1000).getUTCHours();if(h>=7&&h<10)return["London killzone",true];if(h>=12&&h<15)return["New York killzone",true];if(h>=15&&h<17)return["NY afternoon",false];return["Off-session",false]}
+function scan(c,hc){var A=atr(c),w=swings(c,3),b=bias(w),hb=hc&&hc.length>12?bias(swings(hc,2)):0,lv=levels(c,w),e50=emaA(c,50)[c.length-1],px=c[c.length-1].c,res=[];
+detect(c,A,3).forEach(function(s){s.dir=-1;res.push(s)});detect(mirror(c),A,3).forEach(function(s){var u=unm(s);u.dir=1;res.push(u)});
+var t=c.slice(-100),mx=Math.max.apply(null,t.map(function(x){return x.h})),mn=Math.min.apply(null,t.map(function(x){return x.l})),mid=(mx+mn)/2;
+res.forEach(function(s){var d=s.dir,e=s.entry;var cm=c.slice(0,s.m+1),wm=swings(cm,3),bm=bias(wm),hm=cm.length>=48?bias(swings(resample(cm,4),2)):0,em=emaA(cm,50)[cm.length-1],pm=cm[cm.length-1].c,tt=cm.slice(-100),md=(Math.max.apply(null,tt.map(function(x){return x.h}))+Math.min.apply(null,tt.map(function(x){return x.l})))/2,lvm=levels(cm,wm);s.rr=s.tps.map(function(x){return Math.abs(x-e)/Math.abs(s.sl-e)});
+var near=lvm.some(function(l){return l.k===(d===-1?"R":"S")&&Math.abs(l.p-e)<=1.5*s.A});s.ses=sess(c[s.m].t);
+s.checks=[["HTF bias aligned",hm===d,20],["LTF structure aligned",bm===d,6],["EMA50 side",d===-1?pm<em:pm>em,4],["Sweep wick quality",s.wick>=.25*s.A,6],["Equal-level liquidity",s.eq>=1,4],["Strong displacement",s.disp>=1,14],["FVG entry zone",s.z.t==="FVG",8],["OTE overlap",s.ote,10],["Killzone timing",s.ses[1],10],["RR to TP1 at least 1.5",s.rr[0]>=1.5,6],["Premium / discount",d===-1?e>md:e<md,6],["Fresh MSNR level near",near,6]];
+s.score=s.checks.reduce(function(a,x){return a+(x[1]?x[2]:0)},0);s.grade=s.score>=90?"S+":s.score>=75?"A":s.score>=60?"B":"C"});
+res.sort(function(x,y){return(y.st.live-x.st.live)||(y.score-x.score)||(y.m-x.m)});
+return{A:A,b:b,hb:hb,lv:lv,fg:fvgs(c,A),sigs:res.slice(0,4),px:px,e50:e50,mid:mid,rs:rsiA(c,14)[c.length-1]}}
+function parse(txt){var rows=[];txt.split(/\r?\n/).forEach(function(line){var nums=[],ds=null,ts=null,t=null;line.trim().split(/[,;\t ]+/).forEach(function(s){if(!s)return;
+if(/^\d{4}[.\-\/]\d{2}[.\-\/]\d{2}T/.test(s)){var q=s.replace(/[.\/]/g,"-"),p=Date.parse(/[Zz]|[+-]\d\d:?\d\d$/.test(q)?q:q+"Z");if(!isNaN(p))t=p/1000;return}
+if(/^\d{4}[.\-\/]\d{2}[.\-\/]\d{2}$/.test(s)){ds=s.replace(/[.\/]/g,"-");return}if(s.indexOf(":")>-1){ts=s;return}
+if(/^-?\d+(\.\d+)?$/.test(s)){var v=parseFloat(s);if(v>1e8)t=v>1e11?v/1000:v;else nums.push(v)}});
+if(t===null&&ds){var p=Date.parse(ds+"T"+(ts||"00:00:00")+"Z");if(!isNaN(p))t=p/1000}
+if(nums.length>=4){var o=nums[0],h=nums[1],l=nums[2],c=nums[3];rows.push({t:t,o:o,h:Math.max(h,o,c,l),l:Math.min(l,o,c,h),c:c})}});return rows}
+function demo(){var sd=7,r=function(){sd=sd*16807%2147483647;return sd/2147483647},pts=[[0,3900],[30,3790],[40,3840],[65,3745],[79,3815],[84,3735],[86,3752],[91,3770],[93,3766],[118,3640],[135,3612]],
+ex={80:[3815,3848,3805,3812],81:[3812,3814,3796,3798],82:[3798,3800,3782,3784],83:[3784,3790,3655,3722],92:[3774,3797,3770,3790],93:[3790,3791,3762,3766]},
+base=function(i){for(var k=1;k<pts.length;k++)if(i<=pts[k][0]){var a=pts[k-1],b=pts[k];return a[1]+(b[1]-a[1])*(i-a[0])/(b[0]-a[0])}return pts[pts.length-1][1]},
+c=[],pv=3900,t0=Date.UTC(2026,10,19,10,45)/1000;for(var i=0;i<136;i++){var o,h,l,cl;if(ex[i]){o=ex[i][0];h=ex[i][1];l=ex[i][2];cl=ex[i][3]}else{o=pv;cl=base(i)+(r()-.5)*5;h=Math.max(o,cl)+r()*4;l=Math.min(o,cl)-r()*4}c.push({t:t0+i*900,o:o,h:h,l:l,c:cl});pv=cl}return c}
+function bsig(c){var a=emaA(c,9),b=emaA(c,21),d=emaA(c,50),r=rsiA(c,14),o=[];for(var i=0;i<c.length;i++){var s=0;if(i>51){if(a[i-1]<=b[i-1]&&a[i]>b[i]&&c[i].c>d[i]&&r[i]<70)s=1;else if(a[i-1]>=b[i-1]&&a[i]<b[i]&&c[i].c<d[i]&&r[i]>30)s=-1}o.push(s)}return{s:o,e9:a,e21:b,e50:d}}
+/*END*/
+var $=function(i){return document.getElementById(i)},f2=function(x){return x.toFixed(2)};
+var D=[],IND=null,ri=0,R=null,sel=0,LY={smc:1,msnr:1,ind:1},tm=null;
+function load(rows){D=rows;IND=bsig(D);ri=D.length;var p=$("lpos");p.min=Math.min(60,D.length);p.max=D.length;p.value=ri;$("lin").textContent=D.length+" candles"+(D.length<60?" (need at least 60)":"");run()}
+function run(){sel=0;R=null;var v=D.slice(0,ri);if(v.length>=60)R=scan(v,resample(v,4));ui();draw()}
+function ui(){if(!R){$("lsum").innerHTML="";$("lsig").innerHTML='<p class="sub">Load demo data or paste at least 60 candles.</p>';return}
+var v=D.slice(0,ri),last=v[v.length-1],mx=Math.max.apply(null,v.slice(-100).map(function(x){return x.h})),mn=Math.min.apply(null,v.slice(-100).map(function(x){return x.l})),pos=Math.round(100*(R.px-mn)/(mx-mn||1)),
+B={"1":"Bullish","-1":"Bearish","0":"Ranging"},ls=0,li=-1;for(var i=ri-1;i>=0;i--)if(IND.s[i]){ls=IND.s[i];li=ri-1-i;break}
+var up=R.lv.filter(function(l){return l.k==="R"&&l.p>R.px}).sort(function(a,b){return a.p-b.p})[0],dn=R.lv.filter(function(l){return l.k==="S"&&l.p<R.px}).sort(function(a,b){return b.p-a.p})[0],S=sess(last.t),
+cell=function(k,x){return"<div><span>"+k+"</span><b>"+x+"</b></div>"};
+$("lsum").innerHTML=cell("Price",f2(R.px))+cell("ATR",f2(R.A))+cell("HTF bias",B[R.hb])+cell("LTF bias",B[R.b])+cell("EMA50",R.px>R.e50?"Above":"Below")+cell("RSI",R.rs.toFixed(0))+cell("Range",pos+"% "+(pos>50?"premium":"discount"))+cell("Session",S[0])+
+cell("Indicator",ls?(ls>0?"BUY":"SELL")+" · "+li+" ago":"none")+cell("Resistance",up?f2(up.p):"-")+cell("Support",dn?f2(dn.p):"-");
+var h="";if(!R.sigs.length)h='<p class="sub">No sweep + shift setup in view. The scanner waits for a liquidity sweep, a structure shift and a clean retest zone.</p>';
+R.sigs.forEach(function(s,i){var sell=s.dir===-1,on=i===sel;h+='<div class="card sg'+(on?" on":"")+'" data-s="'+i+'"><div class="top"><span class="grade sheen">'+s.grade+'</span><span class="side">'+(sell?"SELL":"BUY")+" · "+s.score+'/100</span></div><div>'+s.st.t+'</div>'+
+'<div class="px"><span>Entry</span><span>'+f2(s.entry)+" ("+s.z.t+(s.ote?" + OTE":"")+')</span><span>Stop</span><span>'+f2(s.sl)+'</span><span>TP1 · TP2 · TP3</span><span>'+s.tps.map(f2).join(" · ")+'</span><span>R to TP1</span><span>1 : '+s.rr[0].toFixed(1)+'</span></div>'+
+(on?'<div class="tags">'+s.checks.map(function(c){return'<span style="'+(c[1]?"color:var(--fg);border-color:var(--fg)":"")+'">'+(c[1]?"✓ ":"· ")+c[0]+"</span>"}).join("")+'</div><div class="row"><button class="btn ghost" data-c="'+i+'">Load in calculator</button></div>':"")+"</div>"});$("lsig").innerHTML=h}
+function draw(){var cv=$("lc"),dp=window.devicePixelRatio||1,W=cv.clientWidth,H=440;cv.width=W*dp;cv.height=H*dp;var g=cv.getContext("2d");g.scale(dp,dp);
+var cs=getComputedStyle(document.documentElement),cl=function(n){return cs.getPropertyValue(n).trim()},BG=cl("--bg"),FG=cl("--fg"),MU=cl("--mute"),LN=cl("--line");
+g.fillStyle=BG;g.fillRect(0,0,W,H);g.font="11px Helvetica,Arial,sans-serif";if(!R){g.fillStyle=MU;g.fillText("Load demo data or paste candles to begin",16,28);return}
+var N=Math.min(110,ri),s0=ri-N,v=D.slice(s0,ri),pad=64,cw=(W-pad)/N,sg=R.sigs[sel],hi=Math.max.apply(null,v.map(function(x){return x.h})),lo=Math.min.apply(null,v.map(function(x){return x.l}));
+if(sg){var ar=[sg.entry,sg.sl].concat(sg.tps);hi=Math.max.apply(null,ar.concat([hi]));lo=Math.min.apply(null,ar.concat([lo]))}var sp=(hi-lo)*.05;hi+=sp;lo-=sp;
+var y=function(p){return 8+(hi-p)/(hi-lo)*(H-16)},x=function(i){return(i-s0+.5)*cw},E=W-pad;
+g.strokeStyle=LN;g.fillStyle=MU;g.lineWidth=1;for(var q=0;q<=5;q++){var pp=lo+(hi-lo)*q/5;g.beginPath();g.moveTo(0,y(pp));g.lineTo(E,y(pp));g.stroke();g.fillText(f2(pp),E+5,y(pp)+4)}
+if(LY.smc){g.globalAlpha=.14;g.fillStyle=FG;R.fg.forEach(function(b){if(b.i<s0||b.top<lo||b.bot>hi)return;g.fillRect(x(b.i-2),y(b.top),E-x(b.i-2),Math.max(2,y(b.bot)-y(b.top)))});g.globalAlpha=1;
+g.setLineDash([2,5]);g.strokeStyle=MU;g.beginPath();g.moveTo(0,y(R.mid));g.lineTo(E,y(R.mid));g.stroke();g.setLineDash([]);g.fillStyle=MU;g.fillText("50% EQ",6,y(R.mid)-4)}
+if(LY.msnr)R.lv.forEach(function(l){if(l.p<lo||l.p>hi)return;g.strokeStyle=FG;g.globalAlpha=.55;g.setLineDash([6,4]);g.beginPath();g.moveTo(Math.max(0,x(l.i)),y(l.p));g.lineTo(E,y(l.p));g.stroke();g.setLineDash([]);g.globalAlpha=1;g.fillStyle=FG;g.fillText((l.k==="R"?"R ":"S ")+f2(l.p),E+5,y(l.p)+4)});
+if(LY.ind)[[IND.e21,.9,1],[IND.e50,.5,2]].forEach(function(a){g.strokeStyle=FG;g.globalAlpha=a[1];g.lineWidth=a[2];g.beginPath();for(var i=s0;i<ri;i++){i===s0?g.moveTo(x(i),y(a[0][i])):g.lineTo(x(i),y(a[0][i]))}g.stroke();g.globalAlpha=1;g.lineWidth=1});
+v.forEach(function(k,q){var xx=x(q+s0),up=k.c>=k.o;g.strokeStyle=FG;g.fillStyle=up?FG:BG;g.beginPath();g.moveTo(xx,y(k.h));g.lineTo(xx,y(k.l));g.stroke();var bt=Math.min(y(k.o),y(k.c)),bh=Math.max(1,Math.abs(y(k.o)-y(k.c)));g.fillRect(xx-cw*.34,bt,cw*.68,bh);g.strokeRect(xx-cw*.34,bt,cw*.68,bh)});
+if(LY.ind)for(var i=s0;i<ri;i++)if(IND.s[i]){var u=IND.s[i]>0,xx=x(i),yy=u?y(D[i].l)+13:y(D[i].h)-13;g.fillStyle=FG;g.beginPath();if(u){g.moveTo(xx,yy-9);g.lineTo(xx-5,yy+1);g.lineTo(xx+5,yy+1)}else{g.moveTo(xx,yy+9);g.lineTo(xx-5,yy-1);g.lineTo(xx+5,yy-1)}g.fill();g.fillText(u?"B":"S",xx-3,u?yy+13:yy-6)}
+if(sg){var x0=Math.max(0,x(Math.max(s0,sg.m)));if(LY.smc){g.fillStyle=FG;g.globalAlpha=.1;g.fillRect(x(Math.max(s0,sg.z.i-2)),y(sg.z.top),E-x(Math.max(s0,sg.z.i-2)),Math.max(2,y(sg.z.bot)-y(sg.z.top)));g.globalAlpha=1;
+if(sg.j>=s0){g.fillStyle=FG;g.fillText("SWEEP",x(sg.j)-14,y(sg.ext)+(sg.dir===-1?-6:14))}if(sg.m>=s0)g.fillText("MSS",x(sg.m)-9,y(D[sg.m].c)+(sg.dir===-1?15:-7))}
+var ln=function(p,t,w,dash){g.strokeStyle=g.fillStyle=FG;g.lineWidth=w;g.setLineDash(dash);g.beginPath();g.moveTo(x0,y(p));g.lineTo(E,y(p));g.stroke();g.setLineDash([]);g.lineWidth=1;g.fillStyle=BG;g.fillRect(E+2,y(p)-8,pad-2,15);g.fillStyle=FG;g.fillText(t+" "+f2(p),E+4,y(p)+4)};
+ln(sg.entry,"ENTRY",2.2,[]);ln(sg.sl,"SL",1.4,[7,4]);sg.tps.forEach(function(p,i){ln(p,"TP"+(i+1),1.2,[2,4])})}}
+$("lsig").onclick=function(e){var c=e.target.dataset.c,s=e.target.closest(".sg");if(c!=null){var g=R.sigs[c];$("en").value=g.entry.toFixed(2);$("sl").value=g.sl.toFixed(2);$("t1").value=g.tps[0].toFixed(2);$("t2").value=g.tps[1].toFixed(2);["en","sl","t1","t2"].forEach(function(i){$(i).dispatchEvent(new Event("input"))});$("tools").scrollIntoView();return}
+if(s){sel=+s.dataset.s;ui();draw()}};
+$("llay").onclick=function(e){var l=e.target.dataset.l;if(l){LY[l]=!LY[l];e.target.setAttribute("aria-pressed",!!LY[l]);draw()}};
+$("ldemo").onclick=function(){stop();$("lpaste").value="";load(demo());ri=70;$("lpos").value=ri;run()};
+$("lfile").onchange=function(){var f=this.files[0];if(!f)return;var r=new FileReader();r.onload=function(){stop();$("lpaste").value="";load(parse(String(r.result)))};r.readAsText(f)};
+$("lpaste").oninput=function(){clearTimeout(tm);tm=setTimeout(function(){stop();load(parse($("lpaste").value))},350)};
+$("lpos").oninput=function(){ri=+this.value;run()};
+function stop(){if(PL){clearInterval(PL);PL=null}$("lplay").textContent="▶ Replay"}var PL=null;
+$("lplay").onclick=function(){if(PL){stop();return}if(!D.length)return;if(ri>=D.length)ri=Math.min(70,D.length);$("lplay").textContent="❚❚ Pause";PL=setInterval(function(){if(ri>=D.length){stop();return}ri++;$("lpos").value=ri;run()},+$("lspd").value)};
+$("lstep").onclick=function(){if(D.length&&ri<D.length){ri++;$("lpos").value=ri;run()}};
+window.addEventListener("resize",draw);new MutationObserver(draw).observe(document.documentElement,{attributes:true});
+
+</script>
+<script>
+(function(){
+var $=function(i){return document.getElementById(i)},f2=function(x){return Number(x).toFixed(2)},BT={"1":"Bullish","-1":"Bearish","0":"Ranging"},LV=false;
+function esc(s){return String(s).replace(/[&<>"]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})}
+function ago(t){var m=Math.max(0,Math.round((Date.now()/1000-t)/60));return m<1?"just now":m<90?m+" min ago":Math.round(m/60)+" h ago"}
+function jget(u){return fetch(u+"?"+Date.now()).then(function(r){if(!r.ok)throw 0;return r.json()})}
+function feed(){jget("data/feed.json").then(function(f){var stale=Date.now()/1000-f.updated>10800;
+$("fdot").textContent=stale?"● STALE":"● LIVE";$("fupd").textContent=f.symbol+" "+f.tf+" · price "+f2(f.price)+" · updated "+ago(f.updated)+" · higher timeframe "+BT[f.hbias]+" · this timeframe "+BT[f.bias];
+var h="";f.signals.forEach(function(s){var r=s.rr[0];h+='<div class="card sig"><div class="top"><span class="grade sheen">'+esc(s.grade)+'</span><span class="side">'+esc(s.dir)+' · '+s.score+'/100</span></div><div>'+esc(s.status)+'</div>'+
+'<div class="px"><span>Entry</span><span>'+f2(s.entry)+' ('+esc(s.zone[2])+(s.ote?" + OTE":"")+')</span><span>Stop</span><span>'+f2(s.sl)+'</span><span>TP1 · TP2 · TP3</span><span>'+s.tps.map(f2).join(" · ")+'</span><span>R to TP1</span><span>1 : '+Number(r).toFixed(1)+'</span><span>Session</span><span>'+esc(s.session)+'</span></div>'+
+'<div class="tags">'+s.checks.map(function(c){return'<span style="'+(c[1]?"color:var(--fg);border-color:var(--fg)":"")+'">'+(c[1]?"✓ ":"· ")+esc(c[0])+"</span>"}).join("")+'</div></div>'});
+$("fsig").innerHTML=h||'<div class="card">No setup is forming right now. The scanner waits for a sweep, a structure shift and a clean retest zone.</div>';
+var H=f.history||[],c={w:0,p:0,l:0,o:0,n:0};H.forEach(function(x){var t=x.status||"";if(t.indexOf("All targets")===0)c.w++;else if(t.indexOf("hit, then stopped")>0)c.p++;else if(t.indexOf("Stopped")===0)c.l++;else if(/Missed|Expired/.test(t))c.n++;else c.o++});
+var cell=function(k,v){return"<div><span>"+k+"</span><b>"+v+"</b></div>"};$("fled").innerHTML=cell("Signals logged",H.length)+cell("All targets hit",c.w)+cell("Partial then stopped",c.p)+cell("Stopped out",c.l)+cell("Open or waiting",c.o)+cell("Never filled",c.n);
+$("ftab").innerHTML='<tr><th>Time (UTC)</th><th>Side</th><th>Grade</th><th>Entry</th><th>Outcome</th></tr>'+H.slice(-12).reverse().map(function(x){return"<tr><td>"+new Date(x.t*1000).toISOString().slice(0,16).replace("T"," ")+"</td><td>"+(x.dir===-1?"SELL":"BUY")+"</td><td>"+esc(x.grade)+"</td><td>"+f2(x.entry)+"</td><td>"+esc(x.status)+"</td></tr>"}).join("")||'<tr><td>No signals logged yet.</td></tr>'
+}).catch(function(){$("fupd").textContent="No feed yet. Run the bot with --publish so it writes data/feed.json."})}
+function live(){jget("data/candles.json").then(function(j){if(window.stop)stop();var rows=j.candles.map(function(x){return{t:x[0],o:x[1],h:x[2],l:x[3],c:x[4]}});load(rows);LV=true;$("lin").textContent=rows.length+" candles · live "+j.symbol+" "+j.tf+" · "+ago(j.updated)}).catch(function(){$("lin").textContent="No live candles yet (run the bot with --publish)."})}
+$("llive").onclick=live;["ldemo","lplay","lstep"].forEach(function(i){$(i).addEventListener("click",function(){LV=false})});$("lfile").addEventListener("change",function(){LV=false});$("lpaste").addEventListener("input",function(){LV=false});
+feed();live();setInterval(function(){feed();if(LV)live()},60000);
+})();
+</script>
+</body>
+</html>
