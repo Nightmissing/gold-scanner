@@ -12,7 +12,8 @@ Modes
   --cmd "/scan"   run one command and print the result (testing, no Telegram)
 
 Sources: mt5 | yahoo | twelvedata | demo      (see --help)
-Env: TELEGRAM_TOKEN, TELEGRAM_CHAT_ID, TWELVEDATA_KEY (twelvedata only)
+Env: TELEGRAM_TOKEN, TELEGRAM_CHAT_ID (one id, or several separated by commas: private chat,
+     group, channel), TWELVEDATA_KEY (twelvedata only)
 Optional: pip install matplotlib   (chart images)
 
 General information only, not financial advice. Test on a demo account first.
@@ -399,11 +400,11 @@ def tg(method, params=None, timeout=35):
         print("Telegram error (%s):" % method, type(e).__name__)
         return None
 
-def tg_photo(chat, png, caption):
+def tg_photo(chat, png, caption, thread=None):
     tok = os.environ.get("TELEGRAM_TOKEN")
     b = "moon%d" % int(time.time() * 1000)
     body = b"".join([("--%s\r\nContent-Disposition: form-data; name=\"%s\"\r\n\r\n%s\r\n" % (b, k, v)).encode()
-                     for k, v in (("chat_id", chat), ("caption", caption), ("parse_mode", "HTML"))] +
+                     for k, v in (("chat_id", chat), ("caption", caption), ("parse_mode", "HTML")) + ((("message_thread_id", thread),) if thread else ())] +
                     [("--%s\r\nContent-Disposition: form-data; name=\"photo\"; filename=\"moon.png\"\r\nContent-Type: image/png\r\n\r\n" % b).encode(),
                      png, ("\r\n--%s--\r\n" % b).encode()])
     try:
@@ -412,16 +413,32 @@ def tg_photo(chat, png, caption):
     except Exception as e:
         print("Telegram error (sendPhoto):", type(e).__name__)
 
-def deliver(items, chat):
+def deliver(items, chat, thread=None):
     for it in items:
         if not os.environ.get("TELEGRAM_TOKEN"):
             print(it[1] if it[0] == "msg" else "[chart image, %d bytes] %s" % (len(it[1]), it[2])); print()
         elif it[0] == "msg":
             p = {"chat_id": chat, "text": it[1], "parse_mode": "HTML", "disable_web_page_preview": "true"}
             if it[2]: p["reply_markup"] = json.dumps(KB)
+            if thread: p["message_thread_id"] = thread
             tg("sendMessage", p)
         else:
-            tg_photo(chat, it[1], it[2])
+            tg_photo(chat, it[1], it[2], thread)
+
+def broadcast(items, chats):
+    for c in (chats or [None]): deliver(items, c)
+
+BOT = {}
+SETTINGS = ("/tf", "/grade", "/risk", "/alerts")
+
+def bot_name():
+    if "u" not in BOT:
+        r = tg("getMe"); BOT["u"] = ((r or {}).get("result") or {}).get("username", "")
+    return BOT["u"]
+
+def is_admin(chat, user):
+    r = tg("getChatMember", {"chat_id": chat, "user_id": user})
+    return bool(r and (r.get("result") or {}).get("status") in ("creator", "administrator"))
 
 # ================================================================ state + commands
 
@@ -554,19 +571,27 @@ def run_command(st, args, text):
     except Exception as e:
         return [("msg", "⚠️ %s" % E(str(e)[:200]), False)]
 
-def handle_updates(st, args, chat, timeout):
-    r = tg("getUpdates", {"offset": st["offset"], "timeout": timeout}, timeout + 10)
+def handle_updates(st, args, chats, timeout):
+    r = tg("getUpdates", {"offset": st["offset"], "timeout": timeout,
+                          "allowed_updates": json.dumps(["message", "channel_post", "callback_query"])}, timeout + 10)
     for u in (r or {}).get("result", []):
         st["offset"] = u["update_id"] + 1
         cb = u.get("callback_query")
-        msg = cb["message"] if cb else u.get("message")
-        if not msg or str(msg["chat"]["id"]) != str(chat): continue
-        if cb: tg("answerCallbackQuery", {"callback_query_id": cb["id"]})
-        if not cb and time.time() - msg.get("date", time.time()) > 3600: continue
+        msg = cb["message"] if cb else (u.get("message") or u.get("channel_post"))
+        if not msg or str(msg["chat"]["id"]) not in chats: continue
         text = cb["data"] if cb else msg.get("text", "")
-        if text.startswith("/"): deliver(run_command(st, args, text), chat)
+        if not text.startswith("/"): continue
+        if not cb and time.time() - msg.get("date", time.time()) > 3600: continue
+        first = text.split()[0]
+        if "@" in first and bot_name() and first.split("@")[1].lower() != bot_name().lower(): continue   # meant for another bot
+        if cb: tg("answerCallbackQuery", {"callback_query_id": cb["id"]})
+        name, who = first.split("@")[0].lower(), (cb or msg).get("from")
+        cid, thread = msg["chat"]["id"], msg.get("message_thread_id")
+        if name in SETTINGS and msg["chat"].get("type") in ("group", "supergroup") and not (who and is_admin(cid, who["id"])):
+            deliver([("msg", "🌙 Only group admins can change settings.", False)], cid, thread); continue
+        deliver(run_command(st, args, text), cid, thread)
 
-def scan_and_alert(st, args, chat):
+def scan_and_alert(st, args, chats):
     cfg = st["cfg"]
     if not cfg["alerts"]: return
     try: R = get_R(st, args)
@@ -582,14 +607,14 @@ def scan_and_alert(st, args, chat):
                                    "entry": s["entry"], "status": s["st"]["t"], "code": code})
                 png = chart_png(R, s, args.symbol, cfg["tf"]); out = []
                 if png: out.append(("photo", png, "🌙 New lunar signal · %s %s" % (E(args.symbol), cfg["tf"])))
-                out.append(("msg", fmt_signal(s, R, cfg, args.symbol, "NEW LUNAR SIGNAL"), True)); deliver(out, chat)
+                out.append(("msg", fmt_signal(s, R, cfg, args.symbol, "NEW LUNAR SIGNAL"), True)); broadcast(out, chats)
         elif st["seen"][key] != code:
             st["seen"][key] = code
             for h in st["hist"]:
                 if h["key"] == key: h["status"], h["code"] = s["st"]["t"], code
             name, ic = SIDE[s["dir"]]
-            deliver([("msg", "🌙 <b>UPDATE</b> · %s %s %s %s\n%s %s\nEntry %s · SL %s · TP1 %s" % (
-                ic, name, E(args.symbol), cfg["tf"], STATE_ICON.get(code, "•"), E(s["st"]["t"]), f2(s["entry"]), f2(s["sl"]), f2(s["tps"][0])), True)], chat)
+            broadcast([("msg", "🌙 <b>UPDATE</b> · %s %s %s %s\n%s %s\nEntry %s · SL %s · TP1 %s" % (
+                ic, name, E(args.symbol), cfg["tf"], STATE_ICON.get(code, "•"), E(s["st"]["t"]), f2(s["entry"]), f2(s["sl"]), f2(s["tps"][0])), True)], chats)
     st["hist"] = st["hist"][-40:]
 
 # ================================================================ main
@@ -605,20 +630,26 @@ def main():
     ap.add_argument("--cmd", default=None, help='run one command, e.g. --cmd "/scan"')
     a = ap.parse_args()
     a.symbol = a.symbol or {"yahoo": "GC=F", "twelvedata": "XAU/USD"}.get(a.source, "XAUUSD")
-    chat = os.environ.get("TELEGRAM_CHAT_ID")
+    chats = [x.strip() for x in os.environ.get("TELEGRAM_CHAT_ID", "").split(",") if x.strip()]
     st = load_state(a.state)
+    if os.environ.get("TELEGRAM_TOKEN") and not st.get("menu"):
+        cm = [("scan", "Full scan with chart"), ("signals", "Live setups"), ("chart", "Chart with levels and gaps"), ("levels", "Fresh MSNR levels"),
+              ("bias", "Trend and range read"), ("price", "Last price"), ("tf", "Change timeframe"), ("grade", "Minimum alert grade"),
+              ("risk", "Account and risk percent"), ("lot", "Lot size calculator"), ("alerts", "Alerts on or off"), ("history", "Recent signals"),
+              ("status", "Settings"), ("help", "Command list")]
+        if tg("setMyCommands", {"commands": json.dumps([{"command": c, "description": d} for c, d in cm])}): st["menu"] = 1
     if a.cmd:
-        deliver(run_command(st, a, a.cmd), chat); save_state(st, a.state); return
+        deliver(run_command(st, a, a.cmd), chats[0] if chats else None); save_state(st, a.state); return
     if a.once:
-        if chat: handle_updates(st, a, chat, 0)
-        scan_and_alert(st, a, chat); save_state(st, a.state); return
-    if not (os.environ.get("TELEGRAM_TOKEN") and chat): sys.exit("Set TELEGRAM_TOKEN and TELEGRAM_CHAT_ID for --poll.")
-    deliver([("msg", "🌙 Moon Signal Bot is awake. Send /help.", True)], chat)
+        if chats: handle_updates(st, a, chats, 0)
+        scan_and_alert(st, a, chats); save_state(st, a.state); return
+    if not (os.environ.get("TELEGRAM_TOKEN") and chats): sys.exit("Set TELEGRAM_TOKEN and TELEGRAM_CHAT_ID for --poll.")
+    broadcast([("msg", "🌙 Moon Signal Bot is awake. Send /help.", True)], chats)
     nxt = 0
     while True:
         try:
-            handle_updates(st, a, chat, 25)
-            if time.time() >= nxt: scan_and_alert(st, a, chat); nxt = time.time() + a.interval
+            handle_updates(st, a, chats, 25)
+            if time.time() >= nxt: scan_and_alert(st, a, chats); nxt = time.time() + a.interval
             save_state(st, a.state)
         except KeyboardInterrupt: break
         except Exception as e:
